@@ -1,7 +1,19 @@
 import { prisma } from './prisma_init'
 
 export async function delete_courses_without_grades() {
-    // TODO: Удалить все курсы, у которых нет ни одной оценки
-    // Использовать один запрос deleteMany средствами Prisma
-    // Вернуть количество удаленных курсов
+    // Находим все курсы с оценками
+    const coursesWithGrades = await prisma.grade.findMany({
+        select: { courseId: true },
+        distinct: ['courseId']
+    })
+    const courseIdsWithGrades = coursesWithGrades.map(c => c.courseId)
+
+    // Удаляем все курсы, которых нет в списке с оценками
+    const result = await prisma.course.deleteMany({
+        where: {
+            id: { notIn: courseIdsWithGrades }
+        }
+    })
+
+    return result.count
 }
